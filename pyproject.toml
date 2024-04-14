@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "CZ4052-Cloud-Computing-Quiz-Generator"
+version = "0.1.0"
+description = "LLM Quiz Generator for CZ4052-Cloud-Computing Assignment 2"
+authors = ["Foo Junwei, Lucas"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "CZ4052-Cloud-Computing-Quiz-Generator"}]
+
+
+[tool.poetry.dependencies]
+python = "~3.11"
+langchain = "^0.1.13"
+langchain-google-vertexai = "^0.1.2"
+streamlit = "^1.32.2"
+
+[tool.pyright]
+venvPath = "./"
+venv = ".venv"
+
+[build-system]
+requires = ["poetry-core"]
+google-cloud-logging = "^3.10.0"
+build-backend = "poetry.core.masonry.api"

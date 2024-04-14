@@ -73,6 +73,12 @@ resource "google_project_service" "cloudrun-service" {
     disable_dependent_services = true
 }
 
+
+resource "google_project_service" "ai-service" {
+    service = "aiplatform.googleapis.com"
+    disable_dependent_services = true
+}
+
 resource "google_cloud_run_v2_service" "cloud_run" {
     name = "${var.project_id}-app-ui"
     location = var.region

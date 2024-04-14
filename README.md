@@ -61,3 +61,11 @@ cd ${PROJECT_ROOT}
 docker build . --platform linux/amd64 -t "$TF_VAR_repo_location"-docker.pkg.dev/"$TF_VAR_project_id"/"$TF_VAR_repo_name"/"$TF_VAR_image_name":latest
 docker push "$TF_VAR_repo_location"-docker.pkg.dev/"$TF_VAR_project_id"/"$TF_VAR_repo_name"/"$TF_VAR_image_name":latest
 ```
+
+Set up CI/CD to Cloud Run using Github Actions
+```{bash}
+export TF_VAR_workload_identity_pool_id="${WORKLOAD_IDENTITY_POOL_ID}"
+export TF_VAR_workload_identity_pool_provider_id="${WORKLOAD_IDENTITY_POOL_PROVIDER_ID}"
+export TF_VAR_github_repository_owner="${github_repository_owner}"
+export TF_VAR_github_repository_name="${github_repository_name}"
+```

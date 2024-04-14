@@ -106,14 +106,6 @@ resource "google_service_account_iam_binding" "workload-identity-user-iam" {
     ]
 }
 
-resource "google_service_account_iam_binding" "workload-identity-user-service-acc-iam" {
-    service_account_id = data.google_service_account.sa.name
-    role = "roles/iam.workloadIdentityUser"
-    members = [
-        "serviceAccount:${var.service_account_name}@${var.project_id}.iam.gserviceaccount.com",
-    ]
-}
-
 resource "google_iam_workload_identity_pool" "identity-pool" {
     workload_identity_pool_id = var.workload_identity_pool_id
     display_name = "CZ4052 CCP WIP"

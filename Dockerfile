@@ -28,6 +28,7 @@ FROM python:3.11-slim-bookworm as runtime
 RUN <<EOF
 apt update
 apt install sqlite3
+apt install poppler-utils
 EOF
 
 ENV VIRTUAL_ENV=/app/.venv \

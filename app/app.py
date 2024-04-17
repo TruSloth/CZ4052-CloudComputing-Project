@@ -81,7 +81,7 @@ if uploaded_file is not None:
     with open(filepath, 'wb') as f:
         f.write(uploaded_file.getbuffer())
 
-    loader = PyPDFLoader(str(filepath), extract_images=True)
+    loader = PyPDFLoader(str(filepath))
     pages = loader.load_and_split()
 
     temp = []

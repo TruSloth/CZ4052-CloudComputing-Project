@@ -58,6 +58,7 @@ chat = ChatVertexAI(
     temperature=0,
     max_output_tokens=2048,
     convert_system_message_to_human=True,
+    location='asia-southeast1'
 )
 
 # human = "You are a helpful assistant for question-answering tasks. Use the following pieces of retrieved \

@@ -85,9 +85,13 @@ resource "google_cloud_run_v2_service" "cloud_run" {
     template {
         containers {
             image = "${var.repo_location}-docker.pkg.dev/${var.project_id}/${var.repo_name}/${var.image_name}:latest"   
+                resources {
+                    limits = {
+                        memory = "2Gi"
+                    }
+                }
+            }
         }
-
-    }
 }
 
 resource "google_cloud_run_v2_service_iam_binding" "cloudrun-service-public-binding" {

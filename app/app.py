@@ -54,7 +54,7 @@ embeddingModel = HuggingFaceEmbeddings(
 )
 
 chat = ChatVertexAI(
-    model_name="gemini-1.5-pro",
+    model_name="gemini-pro",
     temperature=0,
     max_output_tokens=2048,
     convert_system_message_to_human=True,

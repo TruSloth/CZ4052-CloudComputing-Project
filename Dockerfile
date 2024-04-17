@@ -26,9 +26,9 @@ RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 FROM python:3.11-slim-bookworm as runtime
 
 RUN <<EOF
-apt update
-apt install sqlite3
-apt install poppler-utils
+apt-get update
+apt-get -y install sqlite3
+apt-get -y install poppler-utils
 EOF
 
 ENV VIRTUAL_ENV=/app/.venv \

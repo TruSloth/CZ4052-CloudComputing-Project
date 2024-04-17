@@ -61,12 +61,6 @@ chat = ChatVertexAI(
     location='asia-southeast1'
 )
 
-# human = "You are a helpful assistant for question-answering tasks. Use the following pieces of retrieved \
-# context to answer the question. If you don't know the answer, just say that you don't know. Use five sentences \
-# maximum and try to keep the answer consise.\
-# Question: {question}\
-# Context: {context}"
-
 system = (
     "You are a helpful assistant for question-answering tasks. Using the following pieces of retrieved \
 contexts provide an answer based on a query regarding those contexts. Answer with the best of your abilities, but if you \
@@ -110,20 +104,20 @@ if st.session_state.uploaded_file is not None:
         search_type="similarity", search_kwargs={"k": 5}
     )
 
-    imagesList = []
+    st.session_state.imagesList = []
     images = pdf2image.convert_from_bytes(st.session_state.uploaded_file.read())
     for page in images:
         # st.write(page)
-        imagesList.append(page)
+        st.session_state.imagesList.append(page)
 
-    if imagesList:
+    if st.session_state.imagesList:
         st.sidebar.header("Page Selector")
         st.session_state.selected_page = st.sidebar.selectbox(
-            "Select Page", range(len(imagesList)), index=0
+            "Select Page", range(len(st.session_state.imagesList)), index=0
         )
 
         if st.session_state.selected_page is not None:
-            st.image(imagesList[st.session_state.selected_page], channels="BGR", use_column_width=True)
+            st.image(st.session_state.imagesList[st.session_state.selected_page], channels="BGR", use_column_width=True)
 
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:

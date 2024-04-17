@@ -1,4 +1,5 @@
 import streamlit as st
+
 # import pandas as pd
 # import cv2
 # import numpy as np
@@ -35,7 +36,11 @@ with st.sidebar:
     # openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     # st.link_button("Get an OpenAI API key", "https://platform.openai.com/account/api-keys")
     st.link_button("Streamlit Reference", "https://docs.streamlit.io/")
-    st.link_button(label="Github Repository", url = "https://github.com/TruSloth/LLM-Quiz-Generator/tree/main", type="primary")
+    st.link_button(
+        label="Github Repository",
+        url="https://github.com/TruSloth/LLM-Quiz-Generator/tree/main",
+        type="primary",
+    )
 
 st.title("💬 Checkbot")
 st.caption("Powered by Google's Gemini LLM")
@@ -44,14 +49,16 @@ st.caption("Powered by Google's Gemini LLM")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-embeddingModel = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+embeddingModel = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
 chat = ChatVertexAI(
-        model_name="gemini-pro",
-        temperature=0,
-        max_output_tokens=2048,
-        convert_system_message_to_human=True
-    )
+    model_name="gemini-pro",
+    temperature=0,
+    max_output_tokens=2048,
+    convert_system_message_to_human=True,
+)
 
 # human = "You are a helpful assistant for question-answering tasks. Use the following pieces of retrieved \
 # context to answer the question. If you don't know the answer, just say that you don't know. Use five sentences \
@@ -59,10 +66,12 @@ chat = ChatVertexAI(
 # Question: {question}\
 # Context: {context}"
 
-system = "You are a helpful assistant for question-answering tasks. Using the following pieces of retrieved \
+system = (
+    "You are a helpful assistant for question-answering tasks. Using the following pieces of retrieved \
 contexts provide an answer based on a query regarding those contexts. Answer with the best of your abilities, but if you \
 don't know the answer, just say that you don't know. Keep the answer within five sentences and try to keep the answer consise.\
 Context: {context}"
+)
 
 human = "Query: {query}"
 
@@ -70,18 +79,19 @@ prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)]
 
 chain = prompt | chat
 
-uploaded_file = st.file_uploader("Choose a file", type="pdf")
+st.session_state.uploaded_file = st.file_uploader("Choose a file", type="pdf")
 
-if uploaded_file is not None:
+if st.session_state.uploaded_file is not None:
     # Write uploaded_file bytes to container filesystem
     filename = uuid4()
 
-    filepath = Path(f"/tmp/{filename}.pdf")
+    if "filepath" not in st.session_state: 
+        st.session_state.filepath = Path(f"/tmp/{filename}.pdf")
 
-    with open(filepath, 'wb') as f:
-        f.write(uploaded_file.getbuffer())
+    with open(st.session_state.filepath, "wb") as f:
+        f.write(st.session_state.uploaded_file.getbuffer())
 
-    loader = PyPDFLoader(str(filepath))
+    loader = PyPDFLoader(str(st.session_state.filepath))
     pages = loader.load_and_split()
 
     temp = []
@@ -89,26 +99,30 @@ if uploaded_file is not None:
     for page in pages:
         texts = text_splitter.create_documents([page.page_content])
         temp.append(texts)
-    
+
     # flattens the 2d temp list
     pdf = sum(temp, [])
 
     vectorStore = Chroma.from_documents(pdf, embeddingModel)
 
-    retriever = vectorStore.as_retriever(search_type="similarity", search_kwargs={"k": 5})
+    retriever = vectorStore.as_retriever(
+        search_type="similarity", search_kwargs={"k": 5}
+    )
 
     imagesList = []
-    images = pdf2image.convert_from_bytes(uploaded_file.read())
+    images = pdf2image.convert_from_bytes(st.session_state.uploaded_file.read())
     for page in images:
-        #st.write(page)
+        # st.write(page)
         imagesList.append(page)
 
     if imagesList:
         st.sidebar.header("Page Selector")
-        selected_page = st.sidebar.selectbox("Select Page", range(len(imagesList)), index=0)
+        st.session_state.selected_page = st.sidebar.selectbox(
+            "Select Page", range(len(imagesList)), index=0
+        )
 
-        if selected_page is not None:
-            st.image(imagesList[selected_page], channels="BGR", use_column_width=True)
+        if st.session_state.selected_page is not None:
+            st.image(imagesList[st.session_state.selected_page], channels="BGR", use_column_width=True)
 
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:
@@ -131,11 +145,6 @@ if uploaded_file is not None:
                 }
             )
 
-            st.session_state.messages.append({"role": "assistant", "content": message.content})
-
-
-
-
-
-
-
+            st.session_state.messages.append(
+                {"role": "assistant", "content": message.content}
+            )

@@ -79,6 +79,15 @@ resource "google_project_service" "ai-service" {
     disable_dependent_services = true
 }
 
+resource "google_service_account_iam_binding" "aiplatform-user-iam" {
+    service_account_id = data.google_service_account.sa.name
+    role = "roles/aiplatform.serviceAgent"
+
+    members = [
+        "serviceAccount:${var.service_account_name}@${var.project_id}.iam.gserviceaccount.com",
+    ]
+}
+
 resource "google_cloud_run_v2_service" "cloud_run" {
     name = "${var.project_id}-app-ui"
     location = var.region
@@ -87,7 +96,7 @@ resource "google_cloud_run_v2_service" "cloud_run" {
             image = "${var.repo_location}-docker.pkg.dev/${var.project_id}/${var.repo_name}/${var.image_name}:latest"   
                 resources {
                     limits = {
-                        memory = "2Gi"
+                        memory = "4Gi"
                     }
                 }
             }

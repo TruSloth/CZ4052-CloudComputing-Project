@@ -105,6 +105,7 @@ resource "google_cloud_run_v2_service" "cloud_run" {
                     }
                 }
             }
+        service_account = "${var.service_account_name}@${var.project_id}.iam.gserviceaccount.com"
         }
 }
 

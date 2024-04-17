@@ -79,6 +79,11 @@ resource "google_project_service" "ai-service" {
     disable_dependent_services = true
 }
 
+resource "google_project_service" "ml-service" {
+    service = "ml.googleapis.com"
+    disable_dependent_services = true
+}
+
 resource "google_service_account_iam_binding" "aiplatform-user-iam" {
     service_account_id = data.google_service_account.sa.name
     role = "roles/aiplatform.serviceAgent"

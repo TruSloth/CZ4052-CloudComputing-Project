@@ -33,4 +33,4 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY ./app ./app
 COPY ./.streamlit ./.streamlit
 
-CMD ["streamlit", "run", "app/main.py", "--server.port", "8080"]
+CMD ["streamlit", "run", "app/app.py", "--server.port", "8080"]

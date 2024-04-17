@@ -1,14 +1,17 @@
 import streamlit as st
-import pandas as pd
-import cv2
-import numpy as np
+# import pandas as pd
+# import cv2
+# import numpy as np
 import pdf2image
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_vertexai import ChatVertexAI
+
+from pathlib import Path
+from uuid import uuid4
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1500,
@@ -68,15 +71,17 @@ prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)]
 chain = prompt | chat
 
 uploaded_file = st.file_uploader("Choose a file", type="pdf")
+
 if uploaded_file is not None:
-    # # Convert the file to an opencv image.
-    # file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    # opencv_image = cv2.imdecode(file_bytes, 1)
+    # Write uploaded_file bytes to container filesystem
+    filename = uuid4()
 
-    # # Now do something with the image! For example, let's display it:
-    # st.image(opencv_image, channels="BGR")
+    filepath = Path(f"/tmp/{filename}.pdf")
 
-    loader = PyPDFLoader(uploaded_file, extract_images=True)
+    with open(filepath, 'wb') as f:
+        f.write(uploaded_file.getbuffer())
+
+    loader = PyPDFLoader(str(filepath), extract_images=True)
     pages = loader.load_and_split()
 
     temp = []
@@ -101,7 +106,9 @@ if uploaded_file is not None:
     if imagesList:
         st.sidebar.header("Page Selector")
         selected_page = st.sidebar.selectbox("Select Page", range(len(imagesList)), index=0)
-        st.image(imagesList[selected_page], channels="BGR", use_column_width=1)
+
+        if selected_page is not None:
+            st.image(imagesList[selected_page], channels="BGR", use_column_width=True)
 
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:

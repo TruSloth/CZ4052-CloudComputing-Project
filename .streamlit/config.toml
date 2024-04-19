@@ -1,6 +1,7 @@
 [server]
 maxUploadSize = 200
 runOnSave = true
+enableStaticServing = true
 
 [client]
 toolbarMode = "minimal"

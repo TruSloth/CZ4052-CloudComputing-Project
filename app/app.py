@@ -36,11 +36,11 @@ with st.sidebar:
     st.link_button("Streamlit Reference", "https://docs.streamlit.io/")
     st.link_button(
         label="Github Repository",
-        url="https://github.com/TruSloth/LLM-Quiz-Generator/tree/main",
+        url="https://github.com/TruSloth/CZ4052-CloudComputing-Project/",
         type="primary",
     )
 
-st.title("💬 Checkbot")
+st.title("💬 PDFQuery")
 st.header("", divider="rainbow")
 st.caption("Powered by Google's Gemini-Pro")
 
@@ -80,6 +80,8 @@ def uploadNewFile():
     if "uploaded_file" in st.session_state:
         del st.session_state.uploaded_file
     if "vectorStore" in st.session_state:
+        ids_to_delete = st.session_state.vectorStore.get()['ids']
+        st.session_state.vectorStore.delete(ids_to_delete)
         del st.session_state.vectorStore
     if "retriever" in st.session_state:
         del st.session_state.retriever

@@ -41,7 +41,8 @@ with st.sidebar:
     )
 
 st.title("💬 Checkbot")
-st.caption("Powered by Google's Gemini LLM")
+st.header("", divider="rainbow")
+st.caption("Powered by Google's Gemini-Pro")
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -74,23 +75,107 @@ prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)]
 
 chain = prompt | chat
 
+
 def uploadNewFile():
     if "uploaded_file" in st.session_state:
-        del st.session_state.uploaded_file     
+        del st.session_state.uploaded_file
+    if "vectorStore" in st.session_state:
+        del st.session_state.vectorStore
     if "retriever" in st.session_state:
-        del st.session_state.retriever     
+        del st.session_state.retriever
     if "images" in st.session_state:
-        del st.session_state.images 
+        del st.session_state.images
     if "filepath" in st.session_state:
         del st.session_state.filepath
     st.session_state.messages = []
 
 
-st.session_state.uploaded_file = st.sidebar.file_uploader("Choose a file", type="pdf", on_change=uploadNewFile)
+uploaded_file = st.sidebar.file_uploader(
+    "Choose a file", type="pdf", on_change=uploadNewFile
+)
+st.session_state.uploaded_file = uploaded_file
 
 if st.session_state.uploaded_file is not None:
-    if "retriever" in st.session_state:
+    if "retriever" in st.session_state and st.session_state.retriever is not None:
         if "images" in st.session_state:
+            if st.session_state.imagesList:
+                st.sidebar.header("Page Selector")
+
+            st.session_state.selected_page = st.sidebar.selectbox(
+                "Select Page", range(len(st.session_state.imagesList)), index=0
+            )
+
+            if st.session_state.selected_page is not None:
+                st.image(
+                    st.session_state.imagesList[st.session_state.selected_page],
+                    channels="BGR",
+                    use_column_width=True,
+                )
+
+            # Display chat messages from history on app rerun
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            query = st.chat_input("Enter your query here.")
+
+            if query:
+                st.chat_message("user").markdown(query)
+                # Add user message to chat history
+                st.session_state.messages.append({"role": "user", "content": query})
+
+                retrievedDocs = st.session_state.retriever.invoke(query)
+
+                with st.spinner("Let me see..."):
+                    message = chain.invoke(
+                        {
+                            "context": retrievedDocs,
+                            "query": query,
+                        }
+                    )
+
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": message.content}
+                )
+
+                with st.chat_message("assistant"):
+                    st.markdown(message.content)
+    else:
+        # Write uploaded_file bytes to container filesystem
+        filename = uuid4()
+
+        if "filepath" not in st.session_state:
+            st.session_state.filepath = Path(f"/tmp/{filename}.pdf")
+
+        with open(st.session_state.filepath, "wb") as f:
+            f.write(st.session_state.uploaded_file.getbuffer())
+
+        with st.spinner("Loading PDF..."):
+            loader = PyPDFLoader(str(st.session_state.filepath))
+            pages = loader.load_and_split()
+
+            temp = []
+
+            for page in pages:
+                texts = text_splitter.create_documents([page.page_content])
+                temp.append(texts)
+
+            # flattens the 2d temp list
+            st.session_state.pdf = sum(temp, [])
+
+            st.session_state.vectorStore = Chroma.from_documents(
+                st.session_state.pdf, st.session_state.embeddingModel
+            )
+
+            st.session_state.retriever = st.session_state.vectorStore.as_retriever(
+                search_type="similarity", search_kwargs={"k": 5}
+            )
+
+            st.session_state.imagesList = []
+            st.session_state.images = pdf2image.convert_from_bytes(
+                st.session_state.uploaded_file.read()
+            )
+
             for page in st.session_state.images:
                 st.session_state.imagesList.append(page)
 
@@ -117,102 +202,22 @@ if st.session_state.uploaded_file is not None:
 
             if query:
                 st.chat_message("user").markdown(query)
-            # Add user message to chat history
-            st.session_state.messages.append({"role": "user", "content": query})
+                # Add user message to chat history
+                st.session_state.messages.append({"role": "user", "content": query})
 
-            retrievedDocs = st.session_state.retriever.invoke(query)
+                retrievedDocs = st.session_state.retriever.invoke(query)
 
-            with st.spinner("Let me see..."):
-                message = chain.invoke(
-                    {
-                        "context": retrievedDocs,
-                        "query": query,
-                    }
-                )
-
-            st.session_state.messages.append(
-                {"role": "assistant", "content": message.content}
-            )
-
-            with st.chat_message("assistant"):
-                st.markdown(message.content)
-    else:
-        # Write uploaded_file bytes to container filesystem
-        filename = uuid4()
-
-        if "filepath" not in st.session_state:
-            st.session_state.filepath = Path(f"/tmp/{filename}.pdf")
-
-        with open(st.session_state.filepath, "wb") as f:
-            f.write(st.session_state.uploaded_file.getbuffer())
-
-        with st.spinner("Loading PDF..."):
-            loader = PyPDFLoader(str(st.session_state.filepath))
-            pages = loader.load_and_split()
-
-            temp = []
-
-            for page in pages:
-                texts = text_splitter.create_documents([page.page_content])
-                temp.append(texts)
-
-            # flattens the 2d temp list
-            pdf = sum(temp, [])
-
-            vectorStore = Chroma.from_documents(pdf, st.session_state.embeddingModel)
-
-            st.session_state.retriever = vectorStore.as_retriever(
-                search_type="similarity", search_kwargs={"k": 5}
-            )
-
-            st.session_state.imagesList = []
-            st.session_state.images = pdf2image.convert_from_bytes(
-                st.session_state.uploaded_file.read()
-            )
-
-            if "images" in st.session_state:
-                for page in st.session_state.images:
-                    st.session_state.imagesList.append(page)
-
-                if st.session_state.imagesList:
-                    st.sidebar.header("Page Selector")
-
-                st.session_state.selected_page = st.sidebar.selectbox(
-                    "Select Page", range(len(st.session_state.imagesList)), index=0
-                )
-
-                if st.session_state.selected_page is not None:
-                    st.image(
-                        st.session_state.imagesList[st.session_state.selected_page],
-                        channels="BGR",
-                        use_column_width=True,
+                with st.spinner("Let me see..."):
+                    message = chain.invoke(
+                        {
+                            "context": retrievedDocs,
+                            "query": query,
+                        }
                     )
 
-                # Display chat messages from history on app rerun
-                for message in st.session_state.messages:
-                    with st.chat_message(message["role"]):
-                        st.markdown(message["content"])
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": message.content}
+                )
 
-                query = st.chat_input("Enter your query here.")
-
-                if query:
-                    st.chat_message("user").markdown(query)
-                    # Add user message to chat history
-                    st.session_state.messages.append({"role": "user", "content": query})
-
-                    retrievedDocs = st.session_state.retriever.invoke(query)
-
-                    with st.spinner("Let me see..."):
-                        message = chain.invoke(
-                            {
-                                "context": retrievedDocs,
-                                "query": query,
-                            }
-                        )
-
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": message.content}
-                    )
-
-                    with st.chat_message("assistant"):
-                        st.markdown(message.content)
+                with st.chat_message("assistant"):
+                    st.markdown(message.content)
